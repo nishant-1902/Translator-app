@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Translator</title>
+
+<style>
+/* ---------------------- THEME VARIABLES ---------------------- */
+:root {
+    --bg: #121212;
+    --text: #eaeaea;
+    --card: #1e1e1e;
+    --border: #333;
+    --primary: #6c8bff;
+    --primary-dark: #5574e6;
+    --result-bg: #1a1a1a;
+}
+
+body.light {
+    --bg: #f4f7ff;
+    --text: #222;
+    --card: #ffffff;
+    --border: #d0d7ea;
+    --primary: #4b7bec;
+    --primary-dark: #3867d6;
+    --result-bg: #eef3ff;
+}
+
+/* ---------------------- GLOBAL LAYOUT ---------------------- */
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    transition: 0.3s ease;
+}
+
+.container {
+    width: 100%;
+    max-width: 650px;
+    background: var(--card);
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+}
+
+/* ---------------------- HEADINGS ---------------------- */
+h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 25px;
+    font-weight: 700;
+}
+
+/* ---------------------- TEXTAREA & SELECT ---------------------- */
+textarea, select {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 12px;
+    font-size: 16px;
+    background: var(--card);
+    color: var(--text);
+    transition: 0.3s ease;
+}
+
+textarea {
+    height: 150px;
+    resize: none;
+}
+
+textarea:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(108,139,255,0.45);
+    outline: none;
+}
+
+/* ---------------------- ROW FOR DROPDOWN & BUTTON ---------------------- */
+.row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.row select {
+    flex: 1;
+}
+
+.row .small-btn {
+    flex: 0 0 120px;
+}
+
+/* ---------------------- BUTTONS ---------------------- */
+button[type="submit"] {
+    width: 100%;
+    background: var(--primary);
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background: var(--primary-dark);
+    transform: scale(1.04);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.small-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.small-btn:hover {
+    transform: scale(1.06);
+    background: var(--primary-dark);
+}
+
+/* ---------------------- RESULT BOX ---------------------- */
+.result-box {
+    background: var(--result-bg);
+    padding: 22px;
+    border-left: 6px solid var(--primary);
+    border-radius: 12px;
+    margin-top: 25px;
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.action-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-row .small-btn {
+    flex: 1;
+}
+
+/* ---------------------- THEME TOGGLE ---------------------- */
+.toggle-btn {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    z-index: 100;
+}
+
+.toggle-btn:hover {
+    transform: scale(1.05);
+}
+
+/* ---------------------- LOADER ---------------------- */
+.loader {
+    display: none;
+    text-align: center;
+    font-size: 18px;
+    margin-top: 15px;
+    color: var(--primary);
+}
+
+.spinner {
+    border: 5px solid #ccc;
+    border-top: 5px solid var(--primary);
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    margin: 10px auto;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ---------------------- RESPONSIVE ---------------------- */
+@media (max-width: 500px) {
+    .row { flex-direction: column; }
+    .row select, .row .small-btn { width: 100%; }
+    .action-row .small-btn { flex: 1 1 100%; }
+    .toggle-btn { right: 10px; }
+}
+</style>
+</head>
+<body>
+
+<button class="toggle-btn" onclick="toggleTheme()">🌗</button>
+
+<div class="container">
+    <h2>🌐 Advanced Word Translator</h2>
+
+    <form method="POST" onsubmit="showLoader()">
+        {% csrf_token %}
+
+        <textarea name="translate" id="inputText" placeholder="Type your text..." required>{{ original_text }}</textarea>
+
+        <div class="row">
+            <select name="language" required>
+                <option value="hi">Hindi</option>
+                <option value="mr">Marathi</option>
+                <option value="de">German</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="ja">Japanese</option>
+                <option value="ar">Arabic</option>
+                <option value="zh">Chinese</option>
+            </select>
+
+            <button type="button" class="small-btn" onclick="startVoice()">🎤 Speak</button>
+        </div>
+
+        <button type="submit">Translate</button>
+    </form>
+
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        Translating...
+    </div>
+
+    {% if translated_text %}
+    <div class="result-box">
+        <h3>Translated Result:</h3>
+        <p id="translatedText">{{ translated_text }}</p>
+        <div class="action-row">
+            <button class="small-btn" onclick="copyText()">📋 Copy</button>
+            <button class="small-btn" onclick="clearAll()">🗑 Clear</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("light");
+}
+
+function copyText() {
+    let text = document.getElementById("translatedText")?.innerText;
+    if(!text) return;
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
+}
+
+function clearAll() {
+    document.getElementById("inputText").value = "";
+    let out = document.getElementById("translatedText");
+    if(out) out.innerText = "";
+}
+
+function showLoader() {
+    document.getElementById("loader").style.display = "block";
+}
+
+function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SpeechRecognition) {
+        alert("Speech Recognition not supported!");
+        return;
+    }
+    let rec = new SpeechRecognition();
+    rec.lang = "en-US";
+    rec.start();
+    rec.onresult = function(event) {
+        document.getElementById("inputText").value = event.results[0][0].transcript;
+    };
+}
+</script>
+
+</body>
+</html>
